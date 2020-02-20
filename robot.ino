@@ -25,7 +25,7 @@ class Echo{
     int distances[n]={/*0,0,0,0,0,*/0,0,0,0,1000}; 
     int current = 0;
    public:
-    Echo(int tridPin, int echoPin){
+    Echo(int trigPin, int echoPin){
       this->trigPin = trigPin;
       this->echoPin = echoPin;
     }
@@ -46,7 +46,7 @@ class Echo{
       digitalWrite(trigPin, LOW);
       
       // Reads the echoPin, returns the sound wave travel time in microseconds
-      int duration = pulseIn(echoPin, HIGH);
+      int duration = pulseIn(echoPin, HIGH, 50000);
       if(duration<=0){
         return 0;
       }
@@ -85,7 +85,7 @@ int pinRF=A0;    // Direction of right forward
 
 const int MIN_DISTANCE = 60;
 Echo echoFront= Echo(8, 9);
-//Echo echoRight = Echo(2, 13);
+//Echo echoRight = Echo(6, 2);
 
 void setup() {
   echoFront.setup();
