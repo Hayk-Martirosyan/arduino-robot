@@ -83,12 +83,12 @@ int pinLF=A2;      // Direction of left forward
 int pinRB=A1;    // Direction of right back
 int pinRF=A0;    // Direction of right forward
 
-const int MIN_DISTANCE = 60;
-Echo echoFront= Echo(8, 9);
+const int MIN_DISTANCE = 40;
+Echo echoLeft= Echo(8, 9);
 Echo echoRight = Echo(4, 6);
 
 void setup() {
-  echoFront.setup();
+  echoLeft.setup();
   echoRight.setup();
   Serial.begin(9600); // Starts the serial communication
   digitalWrite(pinRF,HIGH); 
@@ -100,13 +100,34 @@ void setup() {
  
 }
 
+class Buzzer {
+  private:
+    int buzzerPin;
+  public:
+    Buzzer(int pin){
+      buzzerPin = pin;
+    }
 
+    void setup(){
+      pinMode(buzzerPin, OUTPUT);
+    }
+
+    void on(int freq){
+      tone(buzzerPin, freq);
+    }
+
+    void off(){
+      noTone(buzzerPin);
+    }
+  
+};
+
+Buzzer buzzer(2);
 int rotationMode = 0;
 
 void loop() {
   
-  
-  Serial.print(echoFront.measureDistance());
+  Serial.print(echoLeft.measureDistance());
   Serial.print("  ");
   Serial.println(echoRight.measureDistance());
 //  delay(100);
@@ -114,11 +135,27 @@ void loop() {
 //  Serial.println("-");
 //  Serial.println(echo2.averageDistance());
 //  delay(500);
-  int distance = min(echoFront.averageDistance(), echoRight.averageDistance());//echoFront.averageDistance();//
-  Serial.println(distance);
+  int distanceLeft = echoLeft.averageDistance();//echoFront.averageDistance();//
+  int distanceRight = echoRight.averageDistance();//echoFront.averageDistance();//
+  Serial.print(distanceLeft);
+  Serial.print(" ");
+  Serial.println(distanceRight);
+  
   if(rotationMode==0){
     
-    if(distance<MIN_DISTANCE){
+    if(distanceLeft<MIN_DISTANCE){
+      rotationMode=1;
+
+      //rotation starting
+      digitalWrite(pinRF,LOW); 
+      digitalWrite(pinLF,LOW);
+//      delay(2000);
+//      digitalWrite(pinRF,HIGH); 
+      digitalWrite(pinRF,LOW);
+      digitalWrite(pinRB,HIGH);
+
+    }
+    else if(distanceRight<MIN_DISTANCE){
       rotationMode=1;
 
       //rotation starting
@@ -128,7 +165,6 @@ void loop() {
 //      digitalWrite(pinRF,HIGH); 
       digitalWrite(pinLF,LOW);
       digitalWrite(pinLB,HIGH);
-
     }
     else{
       digitalWrite(pinRF,LOW); 
@@ -140,11 +176,16 @@ void loop() {
   }
   else {
 
-    if(distance<MIN_DISTANCE*2){
-      
+    if(distanceLeft<MIN_DISTANCE){
+      buzzer.on(400);
+    }
+    else if(distanceRight<MIN_DISTANCE){
+      buzzer.on(800);
     }
     else {
       rotationMode=0;
+
+      buzzer.off();
       //normal mode
       digitalWrite(pinLB,LOW);
       digitalWrite(pinRB,LOW);
@@ -152,5 +193,6 @@ void loop() {
       digitalWrite(pinLF,HIGH);
     }
   }
+  
   
 }
