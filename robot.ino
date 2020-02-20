@@ -85,11 +85,11 @@ int pinRF=A0;    // Direction of right forward
 
 const int MIN_DISTANCE = 60;
 Echo echoFront= Echo(8, 9);
-//Echo echoRight = Echo(6, 2);
+Echo echoRight = Echo(4, 6);
 
 void setup() {
   echoFront.setup();
-//  echoRight.setup();
+  echoRight.setup();
   Serial.begin(9600); // Starts the serial communication
   digitalWrite(pinRF,HIGH); 
   digitalWrite(pinLF,HIGH);
@@ -108,13 +108,13 @@ void loop() {
   
   Serial.print(echoFront.measureDistance());
   Serial.print("  ");
-//  Serial.println(echoRight.measureDistance());
+  Serial.println(echoRight.measureDistance());
 //  delay(100);
 //  Serial.println(echo1.averageDistance() + );
 //  Serial.println("-");
 //  Serial.println(echo2.averageDistance());
 //  delay(500);
-  int distance = echoFront.averageDistance();//min(echoFront.averageDistance(), echoRight.averageDistance());
+  int distance = min(echoFront.averageDistance(), echoRight.averageDistance());//echoFront.averageDistance();//
   Serial.println(distance);
   if(rotationMode==0){
     
@@ -129,6 +129,13 @@ void loop() {
       digitalWrite(pinLF,LOW);
       digitalWrite(pinLB,HIGH);
 
+    }
+    else{
+      digitalWrite(pinRF,LOW); 
+      digitalWrite(pinLF,LOW);
+      delay(20);
+      digitalWrite(pinRF,HIGH); 
+      digitalWrite(pinLF,HIGH);
     }
   }
   else {
