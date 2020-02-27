@@ -14,67 +14,8 @@
 //const int echoPin = 4;
 
 // defines variables
-
-
-
-class Echo{
-  private:
-    int trigPin;
-    int echoPin;
-    const static int n=5;
-    int distances[n]={/*0,0,0,0,0,*/0,0,0,0,1000}; 
-    int current = 0;
-   public:
-    Echo(int trigPin, int echoPin){
-      this->trigPin = trigPin;
-      this->echoPin = echoPin;
-    }
-
-    void setup(){
-      pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
-      pinMode(echoPin, INPUT); // Sets the echoPin as an Input
-    }
-
-    int measureDistance(){
-      // Clears the trigPin
-      digitalWrite(trigPin, LOW);
-      delayMicroseconds(2);
-      
-      // Sets the trigPin on HIGH state for 10 micro seconds
-      digitalWrite(trigPin, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(trigPin, LOW);
-      
-      // Reads the echoPin, returns the sound wave travel time in microseconds
-      int duration = pulseIn(echoPin, HIGH, 50000);
-      if(duration<=0){
-        return 0;
-      }
-      // Calculating the distance
-      int distance= duration*0.034/2;
-      
-      //calculate average of last 10 records
-      current=(current+1)%n;
-      distances[current]=distance;
-      
-      // Prints the distance on the Serial Monitor
-//      Serial.print("Distance: ");
-//      Serial.println(distance);
-       return distance;
-    }
-
-    int averageDistance(){
-      int sum = 0;
-      for(int i=0; i<n; i++){
-        sum+=distances[i];
-      }
-      return sum/n;
-    }
-
-  
-};
-
-
+#include "Gyro.h"
+#include "Echo.h"
 
 
 int pinLB=A3;     // Direction of left back
@@ -86,11 +27,14 @@ int pinRF=A0;    // Direction of right forward
 const int MIN_DISTANCE = 40;
 Echo echoLeft= Echo(8, 9);
 Echo echoRight = Echo(4, 6);
-
+Gyro gyro;
 void setup() {
+  
   echoLeft.setup();
   echoRight.setup();
+  gyro.setup();
   Serial.begin(9600); // Starts the serial communication
+  
   digitalWrite(pinRF,HIGH); 
   digitalWrite(pinLF,HIGH);
 
@@ -124,11 +68,12 @@ class Buzzer {
 
 Buzzer buzzer(2);
 int rotationMode = 0;
-
+double angelZ = 0;
 void loop() {
-  
+
+  gyro.loop();
   Serial.print(echoLeft.measureDistance());
-  Serial.print("  ");
+  Serial.print(" - ");
   Serial.println(echoRight.measureDistance());
 //  delay(100);
 //  Serial.println(echo1.averageDistance() + );
@@ -145,7 +90,7 @@ void loop() {
     
     if(distanceLeft<MIN_DISTANCE){
       rotationMode=1;
-
+      angelZ = gyro.getRotationZ();
       //rotation starting
       digitalWrite(pinRF,LOW); 
       digitalWrite(pinLF,LOW);
@@ -157,7 +102,7 @@ void loop() {
     }
     else if(distanceRight<MIN_DISTANCE){
       rotationMode=1;
-
+      angelZ = gyro.getRotationZ();
       //rotation starting
       digitalWrite(pinRF,LOW); 
       digitalWrite(pinLF,LOW);
@@ -176,16 +121,16 @@ void loop() {
   }
   else {
 
-    if(distanceLeft<MIN_DISTANCE){
-      buzzer.on(400);
+    if(distanceLeft<MIN_DISTANCE || abs(angelZ - gyro.getRotationZ())<90){
+//      buzzer.on(400);
     }
-    else if(distanceRight<MIN_DISTANCE){
-      buzzer.on(800);
+    else if(distanceRight<MIN_DISTANCE || abs(angelZ - gyro.getRotationZ())<90){
+//      buzzer.on(800);
     }
     else {
       rotationMode=0;
 
-      buzzer.off();
+//      buzzer.off();
       //normal mode
       digitalWrite(pinLB,LOW);
       digitalWrite(pinRB,LOW);
