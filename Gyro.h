@@ -25,9 +25,9 @@ class Gyro{
     
     void loop() {
 //      Serial.print(" Accel (g)");
-      readAndProcessAccelData();
+//      readAndProcessAccelData();
       readAndProcessGyroData();
-      printData();
+//      printData();
     }
     
     void setUpMPU() {

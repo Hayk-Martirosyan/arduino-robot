@@ -1,5 +1,4 @@
 
-
 class Echo{
   private:
     int trigPin;
@@ -11,6 +10,7 @@ class Echo{
     Echo(int trigPin, int echoPin){
       this->trigPin = trigPin;
       this->echoPin = echoPin;
+      
     }
 
     void setup(){
@@ -18,14 +18,21 @@ class Echo{
       pinMode(echoPin, INPUT); // Sets the echoPin as an Input
     }
 
+    int step1(){
+      digitalWrite(trigPin, LOW);
+    }
+    int step2(){
+      digitalWrite(trigPin, HIGH);
+    }
+   
     int measureDistance(){
       // Clears the trigPin
-      digitalWrite(trigPin, LOW);
-      delayMicroseconds(2);
-      
-      // Sets the trigPin on HIGH state for 10 micro seconds
-      digitalWrite(trigPin, HIGH);
-      delayMicroseconds(10);
+//      digitalWrite(trigPin, LOW);
+//      delayMicroseconds(2);
+//      
+//      // Sets the trigPin on HIGH state for 10 micro seconds
+//      digitalWrite(trigPin, HIGH);
+//      delayMicroseconds(10);
       digitalWrite(trigPin, LOW);
       
       // Reads the echoPin, returns the sound wave travel time in microseconds
