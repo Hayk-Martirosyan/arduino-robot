@@ -1,18 +1,12 @@
-/*
-* Ultrasonic Sensor HC-SR04 and Arduino Tutorial
-*
-* by Dejan Nedelkovski,
-* www.HowToMechatronics.com
-*
-*/
 
 // defines pins numbers
-//const int trigPin = 8;
-//const int echoPin = 9;
+const int echoLeftTrigPin = 8;
+const int echoLeftEchoPin = 9;
 
-//const int trigPin = 2;
-//const int echoPin = 4;
+const int echoRightTrigPin = 4;
+const int echoRightEchoPin = 6;
 
+const int buzzerPin = 2;
 // defines variables
 #include "Gyro.h"
 #include "Echo.h"
@@ -26,14 +20,14 @@ int pinRB=A1;    // Direction of right back
 int pinRF=A0;    // Direction of right forward
 
 const int MIN_DISTANCE = 40;
-Echo echoLeft= Echo(8, 9);
+Echo echoLeft= Echo(echoLeftTrigPin, echoLeftEchoPin);
 AsyncAction& echoLeftAsync = AsyncBuilder::start()
             .action([] () -> void {  echoLeft.step1();}, 2)
             .action([] () -> void {  echoLeft.step2();}, 10)
             .action([] () -> void {  echoLeft.measureDistance();}, 10)
             .loop().build();
 
-Echo echoRight = Echo(4, 6);
+Echo echoRight = Echo(echoRightTrigPin, echoRightEchoPin);
 AsyncAction& echoRightAsync = AsyncBuilder::start()
             .action([] () -> void {  echoRight.step1();}, 2)
             .action([] () -> void {  echoRight.step2();}, 10)
@@ -43,7 +37,7 @@ AsyncAction& echoRightAsync = AsyncBuilder::start()
 
 
 Gyro gyro;
-Buzzer buzzer(2);
+Buzzer buzzer(buzzerPin);
 AsyncAction& buzzerAsync = AsyncBuilder::start().action([] () -> void {  buzzer.on(800);}, 400).action([] () -> void {  buzzer.on(600);}, 400).loop().onEnd([](){buzzer.off();}).build();
 void stopDriving(){
   digitalWrite(pinRF,LOW); 
@@ -94,6 +88,33 @@ void setup() {
 
 int rotationMode = 0;
 double angelZ = 0;
+void driveAhead(){
+  driveLeft.off();
+  driveRight.off();
+  driveFront.on();
+  buzzerAsync.off();
+}
+
+void turnLeft(){
+  driveFront.off();
+  driveLeft.on();
+  driveRight.off();
+  buzzerAsync.on();
+}
+
+void turnRight(){
+  driveFront.off();
+  driveRight.on();
+  driveLeft.off();
+  buzzerAsync.on();
+}
+
+void stop(){
+  driveFront.off();
+  driveLeft.off();
+  driveRight.off();
+  buzzerAsync.off();
+}
 
 
 
@@ -104,22 +125,40 @@ AsyncAction& test = AsyncBuilder::start().action([] () -> void {  Serial.println
 ////  Serial.println("x");
 //  
 //}
+
+
+enum RobotMode{
+  ExecutingCommand, DrivingAhead, LeftTurnFromObstacle, RightTurnFromObstacle, LeftTurnReturnToDirection, RightTurnReturnToDirection
+};
+//enum Command{
+//  None, Stop, DriveAhead, LeftTurn, RightTurn
+//};
+RobotMode mode = DrivingAhead;
+//Command command = None;
+
+
+AsyncAction& rightTurnReturn = AsyncBuilder::start()
+      .action([](){driveAhead();}, 2000)
+      .action([] () -> void {  turnRight(); mode=RightTurnReturnToDirection;}, 1)
+      .build();
+
+AsyncAction& leftTurnReturn = AsyncBuilder::start()
+      .action([](){driveAhead();}, 2000)
+      .action([] () -> void {  turnLeft(); mode=LeftTurnReturnToDirection;}, 1)
+      .build();
+
 long lastMillis = millis();
+bool debugStart = true;
 void loop() {
   long millis2 = millis();
-  Serial.print(millis2-lastMillis);
-  Serial.print('-');
+//  Serial.print(millis2-lastMillis);
+//  Serial.print('-');
   lastMillis = millis2;
 //  return;
   gyro.loop();
   AsyncBuilder::run();
+  
 //  test.on();
-//  echoLeft.measureDistance();
-//  echoRight.measureDistance();
-//  Serial.print(echoLeft.measureDistance());
-////  Serial.print(" - ");
-//  Serial.println(echoRight.measureDistance());
-//  delay(100);
 //  Serial.println(echo1.averageDistance() + );
 //  Serial.println("-");
 //  Serial.println(echo2.averageDistance());
@@ -129,81 +168,127 @@ void loop() {
 //  Serial.print(distanceLeft);
 //  Serial.print(' ');
 //  Serial.println(distanceRight);
+//  switch(command){
+//    case None:break;
+//    
+//    case DriveAhead:
+//        driveAhead();
+//        buzzerAsync.off();
+//        break;
+//    case LeftTurn:
+//        driveFront.off();
+//        driveRight.on();
+//        buzzerAsync.on();
+//        break;
+//    case RightTurn:
+//        driveFront.off();
+//        driveLeft.on();
+//        buzzerAsync.on();
+//        break;
+//    case Stop:
+//        driveLeft.off();
+//        driveRight.off();
+//        break;
+//    
+//  }
+//  command = None;
   
-  if(rotationMode==0){
+  switch(mode){
+    case ExecutingCommand:break;
     
-    if(distanceLeft<MIN_DISTANCE){
-      rotationMode=1;
-      angelZ = gyro.getRotationZ();
-      //rotation starting
-      driveFront.off();
-      driveRight.on();
-//      digitalWrite(pinRF,LOW); 
-//      digitalWrite(pinLF,LOW);
-////      delay(2000);
-////      digitalWrite(pinRF,HIGH); 
-//      digitalWrite(pinRF,LOW);
-//      digitalWrite(pinRB,HIGH);
-
-    }
-    else if(distanceRight<MIN_DISTANCE){
-      rotationMode=1;
-      angelZ = gyro.getRotationZ();
-      //rotation starting
-      driveFront.off();
-      driveLeft.on();
-//      digitalWrite(pinRF,LOW); 
-//      digitalWrite(pinLF,LOW);
-////      delay(2000);
-////      digitalWrite(pinRF,HIGH); 
-//      digitalWrite(pinLF,LOW);
-//      digitalWrite(pinLB,HIGH);
-    }
-    else{
+    case DrivingAhead: 
+        if(distanceLeft<MIN_DISTANCE){
+          turnRight();
+          mode = RightTurnFromObstacle;
+          angelZ = gyro.getRotationZ();
+        }
+        else if(distanceRight<MIN_DISTANCE){
+          turnLeft();
+          mode = LeftTurnFromObstacle;
+          angelZ = gyro.getRotationZ();
+        }
+        break;
+    case LeftTurnFromObstacle:
+        if(distanceLeft>MIN_DISTANCE && abs(angelZ-gyro.getRotationZ())>45){
+//          command = drive ahead 2s, turn right until angelZ
+          rightTurnReturn.on();
+          mode = ExecutingCommand;
+        }
+        break;
+    case RightTurnFromObstacle:
+        if(distanceRight>MIN_DISTANCE && abs(angelZ-gyro.getRotationZ())>45){
+//          command = drive ahead 2s, turn left until angelZ
+          leftTurnReturn.on();
+          mode = ExecutingCommand;
+        }
+        break;
+    case RightTurnReturnToDirection:
+        if(abs(angelZ-gyro.getRotationZ())<5){
+          rightTurnReturn.off();
+          driveAhead();
+          mode = DrivingAhead;
+        }
+        break;
+    case LeftTurnReturnToDirection:
+        if(abs(angelZ-gyro.getRotationZ())<5){
+          
+          leftTurnReturn.off();
+          driveAhead();
+          mode = DrivingAhead;
+        }
+        break;
+        
+  }
+  Serial.print(mode);
+  Serial.print(' ' );
+  Serial.println(angelZ-gyro.getRotationZ());
+//  if(rotationMode==0){
+//    
+//    if(distanceLeft<MIN_DISTANCE){
+//      rotationMode=1;
+//      angelZ = gyro.getRotationZ();
+//      //rotation starting
+//      driveFront.off();
+//      driveRight.on();
+//
+//    }
+//    else if(distanceRight<MIN_DISTANCE){
+//      rotationMode=1;
+//      angelZ = gyro.getRotationZ();
+//      //rotation starting
+//      driveFront.off();
+//      driveLeft.on();
+//    }
+//    else{
+//    }
+//  }
+//  else {
+//
+//    if(distanceLeft<MIN_DISTANCE || abs(angelZ-gyro.getRotationZ())<45){
+//        buzzerAsync.on();
+//
+//    }
+//    else if(distanceRight<MIN_DISTANCE || abs(angelZ-gyro.getRotationZ())<45){
+//        buzzerAsync.on();
+//    }
+//    else {
+////      if(rotationMode==1){
+////        digitalWrite(pinLB,LOW);
+////        digitalWrite(pinRB,LOW);
+////        digitalWrite(pinRF,HIGH); 
+////        digitalWrite(pinLF,HIGH);
+//////        delay(3000);
+////        rotationMode =2;
+////      }
+//      rotationMode=0;
+//        
+//        buzzerAsync.off();
+//      //normal mode
 //      driveLeft.off();
 //      driveRight.off();
 //      driveFront.on();
-//      digitalWrite(pinRF,LOW); 
-//      digitalWrite(pinLF,LOW);
-//      delay(20);
-//      digitalWrite(pinRF,HIGH); 
-//      digitalWrite(pinLF,HIGH);
-    }
-  }
-  else {
-
-    if(distanceLeft<MIN_DISTANCE || abs(angelZ-gyro.getRotationZ())<45){
-//      buzzer.on(400);
-        buzzerAsync.on();
-
-    }
-    else if(distanceRight<MIN_DISTANCE || abs(angelZ-gyro.getRotationZ())<45){
-//      buzzer.on(800);
-        buzzerAsync.on();
-    }
-    else {
-//      if(rotationMode==1){
-//        digitalWrite(pinLB,LOW);
-//        digitalWrite(pinRB,LOW);
-//        digitalWrite(pinRF,HIGH); 
-//        digitalWrite(pinLF,HIGH);
-////        delay(3000);
-//        rotationMode =2;
-//      }
-      rotationMode=0;
-        
-//      buzzer.off();
-        buzzerAsync.off();
-      //normal mode
-      driveLeft.off();
-      driveRight.off();
-      driveFront.on();
-//      digitalWrite(pinLB,LOW);
-//      digitalWrite(pinRB,LOW);
-//      digitalWrite(pinRF,HIGH); 
-//      digitalWrite(pinLF,HIGH);
-    }
-  }
+//    }
+//  }
   
   
 }

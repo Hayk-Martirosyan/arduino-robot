@@ -1,4 +1,7 @@
+//#ifndef EXTERNAL_DEBUG
 #include <Wire.h>
+
+//#endif
 class Gyro{
   private:
   	long accelX, accelY, accelZ;

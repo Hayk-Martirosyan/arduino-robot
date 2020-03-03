@@ -121,12 +121,14 @@ class List{
       p=p->next;
       i++;
     }
+    
     if(p!=NULL){
       return p->value;
     }
     else {
 //      throw "List index error";
-        return NULL;
+        Serial.println("List index error");
+        return p->value;
     }
   }
 

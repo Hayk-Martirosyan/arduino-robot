@@ -15,7 +15,7 @@ class AsyncAction {
 
   List<func> actions;
   List<int> delays;
-  bool loop;
+  bool loop = false;
   int currentAction = 0;
   unsigned long millisStart;//time = millis()
   ActionMode mode = ACTION;
@@ -49,16 +49,16 @@ class AsyncAction {
   void process(unsigned long currentMillis){
 
     // return;
-    // Serial.print(enabled);
+//     Serial.print(enabled);
     // Serial.print(d);
 
 
     if(!enabled){
 
     }
-    else if(mode==END){
-      //finished
-    }
+//    else if(mode==END){
+//      //finished
+//    }
     else if(mode == ACTION){
 
       actions[currentAction]();
@@ -80,7 +80,10 @@ class AsyncAction {
           }
           else {
             //finish
-            mode = END;
+//            mode = END;
+            currentAction=0;
+            mode = ACTION;
+            enabled=false;
           }
         }
         else {
@@ -94,6 +97,8 @@ class AsyncAction {
   void on(){
 //    Serial.println("-");
 //    Serial.print(enabled);
+    currentAction = 0;
+    mode = ACTION;
     this->enabled = true;
     onStart();
 //    Serial.print(enabled);
@@ -175,7 +180,7 @@ class AsyncBuilder {
 //      Serial.print("z");
       iterator->next()->process(mls);
     }
-
+//    Serial.println('-');
     delete iterator;
 
   }
